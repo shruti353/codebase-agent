@@ -14,85 +14,108 @@
     
 
 import ast
-def parse_file(filepath:str)-> list[dict]:
-    with open(filepath, "r", encoding="utf-8") as f:
-        source= f.read()
-    tree= ast.parse(source)
-    
-    print(tree)
-    print(ast.dump(tree))
-    
-    class CodeVisitor(ast.NodeVisitor):
-        def __init__(self,source,filepath):
-            self.source= source
-            self.filepath= filepath
-            self.chunks= []
-            self.calls =[]
-            self.current_class= None
-            self.current_function= None
-            
-        def visit_ClassDef(self,node):
-            entry= {
-                "name": node.name,
-                "type": "class",
-                "docstring":ast.get_docstring(node),
-                "source_code": ast.get_source_segment(self.source, node),
-                "file": self.filepath,
-                "start_line":node.lineno,
-                "end_line":node.end_lineno,
-                "parent_class":None
-            }
-            self.chunks.append(entry)
-            
-            prev_class= self.current_class
-            self.current_class = node.name
-            self.generic_visit(node)
-            self.current_class= prev_class
-            
-            def visit_FucntionDef(self,node):
-                entry={
-                            "name": node.name,
-                            "type": "function",
-                            "docstring":ast.get_docstring(node),
-                            "source_code": ast.get_source_segment(self.source, node),
-                            "file": self.filepath,
-                            "start_line":node.lineno,
-                            "end_line":node.end_lineno,
-                            "parent_class":self.current_class
+from pathlib import Path
 
-                }
-                self.chunks.append(entry)
-                
-                for call in self.find_calls_in(node):
-                    self.calls.append((node.name, call))
-                
-                prev_function = self.current_function
-                self.current_function = node.name
-                self.generic_visit(node)
-                self.current_function = prev_function
-
-            visit_AsyncFunctionDef = visit_FunctionDef
+SKIP_DIRS = {"venv", ".venv", ".git", "__pycache__", "node_modules"}
+    
+class CodeVisitor(ast.NodeVisitor):
+    def __init__(self,source,filepath):
+        self.source= source
+        self.filepath= filepath
+        self.chunks= []
+        self.calls =[]
+        self.current_class= None
+        self.current_function= None
+        
+    def find_calls_in(self,fun_node):
+            calls=[]
+            for node in ast.walk(fun_node):
+                if isinstance(node, ast.Call):
+                    if isinstance(node.func, ast.Name):
+                        calls.append(node.func.id)
+                    elif isinstance(node.func, ast.Attribute):
+                        calls.append(node.func.attr)
+                        
+            return calls
             
         
-    results=[]
-    for node in ast.walk(tree):
-        if isinstance (node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
-            entry={
-                "name":node.name,
-                "type": "class" if isinstance(node,ast.ClassDef) else "function",
-                "docstring": ast.get_docstring(node),
-                "source_code":ast.get_source_segment(source,node),
-                "file":filepath,
-                "start_line":node.lineno,
-                "end_line":node.end_lineno   
-                
-                }
-            results.append(entry)
-    return results
+    def visit_ClassDef(self,node):
+        entry= {
+            "name": node.name,
+            "type": "class",
+            "docstring":ast.get_docstring(node),
+            "source_code": ast.get_source_segment(self.source, node),
+            "file": self.filepath,
+            "start_line":node.lineno,
+            "end_line":node.end_lineno,
+            "parent_class":None
+        }
+        self.chunks.append(entry)
+        
+        prev_class= self.current_class
+        self.current_class = node.name
+        self.generic_visit(node)
+        self.current_class= prev_class
+        
+    def visit_FunctionDef(self,node):
+        entry={
+                    "name": node.name,
+                    "type": "function",
+                    "docstring":ast.get_docstring(node),
+                    "source_code": ast.get_source_segment(self.source, node),
+                    "file": self.filepath,
+                    "start_line":node.lineno,
+                    "end_line":node.end_lineno,
+                    "parent_class":self.current_class
 
+        }
+        self.chunks.append(entry)
+        
+        for call in self.find_calls_in(node):
+            self.calls.append((node.name, call))
+        
+        prev_function = self.current_function
+        self.current_function = node.name
+        self.generic_visit(node)
+        self.current_function = prev_function
+        
+    visit_AsyncFunctionDef = visit_FunctionDef
+    
+def find_python_files(repo_path):
+    for path in Path(repo_path).rglob("*.py"):
+        if not any(part in SKIP_DIRS for part in path.parts):
+            yield path
+            
+def parse_repo(repo_path):
+    all_chunks=[]
+    all_calls=[]
+
+    for file_path in find_python_files(repo_path):
+        with open(file_path, "r", encoding="utf-8") as f:
+            source= f.read()
+        
+        try:
+            tree= ast.parse(source)
+        except SyntaxError:
+            print(f"Skipping {file_path}: could not parse")
+            continue
+        
+        visitor= CodeVisitor(source, str(file_path))
+        visitor.visit(tree)
+        
+        all_chunks.extend(visitor.chunks)
+        all_calls.extend(visitor.calls)
+        
+    return all_chunks, all_calls
+
+           
 
 if __name__=="__main__":
     import json
-    parsed= parse_file("sample.py")
-    print(json.dumps(parsed, indent=2))
+    
+    chunks, calls = parse_repo(".")
+    
+    print(f"found {len(chunks)} chunks and {len(calls)} calls \n")
+    print(json.dumps(chunks,indent=2))
+    print(calls)
     
