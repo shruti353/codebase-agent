@@ -51,7 +51,7 @@ def insert_chunks(conn, chunks: list[dict]):
     """
 
     cursor = conn.cursor()
-    name_to_id = {}
+    chunks_with_id = []
 
     for chunk in chunks:
         cursor.execute("""
@@ -67,10 +67,10 @@ def insert_chunks(conn, chunks: list[dict]):
             chunk["end_line"],
             chunk["parent_class"],
         ))
-        name_to_id[chunk["name"]]= cursor.lastrowid
+        chunks_with_id.append((cursor.lastrowid,chunk))
 
     conn.commit()
-    return name_to_id
+    return chunks_with_id
 
 
 def insert_calls(conn, calls: list[tuple]):
