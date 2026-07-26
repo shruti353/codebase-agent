@@ -71,8 +71,8 @@ class CodeVisitor(ast.NodeVisitor):
         }
         self.chunks.append(entry)
         
-        for call in self.find_calls_in(node):
-            self.calls.append((node.name, call))
+        for callee in self.find_calls_in(node):
+            self.calls.append((node.name, callee))
         
         prev_function = self.current_function
         self.current_function = node.name
