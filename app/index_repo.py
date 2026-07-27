@@ -1,13 +1,13 @@
 from qdrant_client import QdrantClient
 from app.parser.ast_parser import parse_repo
-from app.storage.db import init_db, insert_chunks, insert_calls
+from app.storage.db import get_connection, reset_db, insert_chunks, insert_calls
 from app.storage.vector_store import init_collection, index_chunks, search_code
 
 def index_repository(repo_path:str):
     chunks, calls= parse_repo(repo_path)
     print(f"Parsed {len(chunks)} chunks and {len(calls)} calls")
 
-    conn= init_db()
+    conn= reset_db()
     chunks_with_id= insert_chunks(conn,chunks)
     insert_calls(conn, calls)
     print("Inserted into SQLite")
