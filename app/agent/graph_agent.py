@@ -15,8 +15,7 @@ from app.storage.vector_store import search_code as _search_code
 
 conn= get_connection()
 load_dotenv()
-qdrant = QdrantClient(host="localhost", port=6333)
-
+qdrant = QdrantClient(host=os.getenv("QDRANT_HOST", "localhost"), port=6333)
 
 # ---- Tools: same logic as Day 4, now wrapped with @tool so LangGraph
 # can generate their schemas automatically instead of you hand-writing JSON ----
@@ -114,7 +113,7 @@ def ask(question: str):
 
     return result["messages"][-1].content
 
-    
+
 if __name__ == "__main__":
     question = "If I changed what the 'add' function returns, what other functions might break?"
     answer = ask(question)
