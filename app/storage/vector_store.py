@@ -1,10 +1,11 @@
 import requests
 from qdrant_client import QdrantClient
 from qdrant_client.models import VectorParams, Distance, PointStruct
+import os
 
 COLLECTION_NAME = "code_chunks"
 EMBED_DIM= 768
-OLLAMA_URL= "http://localhost:11434/api/embeddings"
+OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/embeddings")
 
 def get_embeddings(text: str) -> list[float]:
     response= requests.post(
