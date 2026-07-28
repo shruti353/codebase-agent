@@ -1,3 +1,11 @@
+"""
+V1 of the agent — a manual, hand-written tool-calling loop (no framework).
+Superseded by graph_agent.py, which reimplements the same logic using
+LangGraph's StateGraph. Kept here as a reference showing the underlying
+mechanics that LangGraph abstracts away — see graph_agent.py for the
+version actually used by the FastAPI app.
+"""
+
 import os, json
 from groq import Groq, BadRequestError
 from dotenv import load_dotenv
