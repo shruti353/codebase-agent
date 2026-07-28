@@ -4,7 +4,7 @@ DB_PATH= "codebase.db"
 
 def get_connection(db_path=DB_PATH):
     """Just connect + ensure tables exist. Never wipes data. Safe to call from anywhere."""
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(db_path, check_same_thread=False)
     cursor = conn.cursor()
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS chunks (
@@ -39,7 +39,7 @@ def reset_db(db_path=DB_PATH):
     conn.commit()
     conn.close()
     return get_connection(db_path)
-    
+
     
 def insert_chunks(conn, chunks: list[dict]):
     """
@@ -101,6 +101,14 @@ def get_callers(conn, function_name: str) -> list[str]:
     """, (function_name,))
 
     return [row[0] for row in cursor.fetchall()]
+
+def get_callees(conn, function_name: str) -> list[str]:
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT DISTINCT callee FROM calls WHERE caller = ?
+    """, (function_name,))
+    return [row[0] for row in cursor.fetchall()]
+
 
 def get_function_source(conn, function_name: str) -> str | None:
     """
