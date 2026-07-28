@@ -22,11 +22,12 @@ def build_embedding_text(chunk: dict) -> str:
 
 
 def init_collection(client: QdrantClient):
-    if not client.collection_exists(COLLECTION_NAME):
-        client.create_collection(
-            collection_name= COLLECTION_NAME,
-            vectors_config= VectorParams(size=EMBED_DIM, distance=Distance.COSINE ),
-        )
+    if client.collection_exists(COLLECTION_NAME):
+        client.delete_collection(COLLECTION_NAME)
+    client.create_collection(
+        collection_name=COLLECTION_NAME,
+        vectors_config=VectorParams(size=EMBED_DIM, distance=Distance.COSINE),
+    )
 
 def index_chunks(client: QdrantClient, chunks_with_id: list[tuple[int, dict]]):
     points=[]
