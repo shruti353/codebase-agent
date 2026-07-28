@@ -1,5 +1,9 @@
 qdrant-client
+ollama
+python-dotenv
+groq
+langgraph
+langchain-groq
+langchain-core
 fastapi
 uvicorn
-sentence-transformers
-ollama
