@@ -5,5 +5,26 @@ services:
       - "6333:6333"
     volumes:
       - qdrant_data:/qdrant/storage
+
+  ollama:
+    image: ollama/ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    depends_on:
+      - qdrant
+      - ollama
+    environment:
+      - QDRANT_HOST=qdrant
+      - OLLAMA_URL=http://ollama:11434/api/embeddings
+      - GROQ_API_KEY=${GROQ_API_KEY}
+
 volumes:
   qdrant_data:
+  ollama_data:
