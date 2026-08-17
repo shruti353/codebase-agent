@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 import os
 from typing import Annotated, TypedDict
 
@@ -14,9 +17,11 @@ from app.storage.db import get_connection, get_callers, get_callees, get_functio
 from app.storage.vector_store import search_code as _search_code
 
 conn= get_connection()
-load_dotenv()
-qdrant = QdrantClient(host=os.getenv("QDRANT_HOST", "localhost"), port=6333)
 
+qdrant= QdrantClient(
+    url=os.getenv("QDRANT_URL", "http://localhost:6333"),
+    api_key=os.getenv("QDRANT_API_KEY"),
+)
 # ---- Tools: same logic as Day 4, now wrapped with @tool so LangGraph
 # can generate their schemas automatically instead of you hand-writing JSON ----
 
