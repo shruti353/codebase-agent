@@ -7,3 +7,5 @@ langchain-groq
 langchain-core
 fastapi
 uvicorn
+google-genai
+cohere
