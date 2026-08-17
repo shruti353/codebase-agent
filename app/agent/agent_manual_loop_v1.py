@@ -6,15 +6,17 @@ mechanics that LangGraph abstracts away — see graph_agent.py for the
 version actually used by the FastAPI app.
 """
 
+from dotenv import load_dotenv
+load_dotenv()
+
 import os, json
 from groq import Groq, BadRequestError
-from dotenv import load_dotenv
+
 
 from qdrant_client import QdrantClient
 from app.storage.db import get_connection, get_callers, get_function_source
 from app.storage.vector_store import search_code
 
-load_dotenv()
 client = Groq(api_key=os.environ["GROQ_API_KEY"])
 qdrant = QdrantClient(host="localhost", port=6333)
 conn = get_connection()
