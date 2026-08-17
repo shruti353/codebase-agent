@@ -1,9 +1,13 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 import sys
 from qdrant_client import QdrantClient
 from app.parser.ast_parser import parse_repo
 from app.storage.db import reset_db, insert_chunks, insert_calls
 from app.storage.vector_store import init_collection, index_chunks, search_code
 import os
+
 
 def index_repository(repo_path: str):
     chunks, calls = parse_repo(repo_path)
@@ -14,7 +18,11 @@ def index_repository(repo_path: str):
     insert_calls(conn, calls)
     print("Inserted into SQLite")
 
-    qdrant = QdrantClient(host=os.getenv("QDRANT_HOST", "localhost"), port=6333)
+    qdrant = QdrantClient(
+        url=os.getenv("QDRANT_URL", "http://localhost:6333"),
+        api_key=os.getenv("QDRANT_API_KEY"),
+    )
+
     init_collection(qdrant)
     count = index_chunks(qdrant, chunks_with_ids)
     print(f"Indexed {count} vectors into Qdrant")
