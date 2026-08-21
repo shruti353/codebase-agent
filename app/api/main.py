@@ -14,23 +14,32 @@ class ChatRequest(BaseModel):
 def event_stream(question: str):
     messages = [SystemMessage(content=SYSTEM_PROMPT), HumanMessage(content=question)]
 
-    for step in agent_graph.stream({"messages": messages}, stream_mode="values"):
-        last_msg = step["messages"][-1]
-        msg_type = getattr(last_msg, "type", None)
+    try:
+        for step in agent_graph.stream(
+            {"messages": messages},
+            config={"recursion_limit": 15},
+            stream_mode="values",
+        ):
+            last_msg = step["messages"][-1]
+            msg_type = getattr(last_msg, "type", None)
 
-        if msg_type in ("human", "system"):
-            continue
-        elif getattr(last_msg, "tool_calls", None):
-            for tc in last_msg.tool_calls:
-                payload = {"type": "tool_call", "name": tc["name"], "args": tc["args"]}
+            if msg_type in ("human", "system"):
+                continue
+            elif getattr(last_msg, "tool_calls", None):
+                for tc in last_msg.tool_calls:
+                    payload = {"type": "tool_call", "name": tc["name"], "args": tc["args"]}
+                    yield f"data: {json.dumps(payload)}\n\n"
+            elif msg_type == "tool":
+                payload = {"type": "tool_result", "content": str(last_msg.content)[:300]}
                 yield f"data: {json.dumps(payload)}\n\n"
-        elif msg_type == "tool":
-            payload = {"type": "tool_result", "content": str(last_msg.content)[:300]}
-            yield f"data: {json.dumps(payload)}\n\n"
-        else:
-            payload = {"type": "final", "content": last_msg.content}
-            yield f"data: {json.dumps(payload)}\n\n"
-
+            else:
+                payload = {"type": "final", "content": last_msg.content}
+                yield f"data: {json.dumps(payload)}\n\n"
+    except Exception as e:
+        payload = {"type": "final", "content": f"I wasn't able to find a confident answer for that question. ({type(e).__name__})"}
+        yield f"data: {json.dumps(payload)}\n\n"
+        
+        
             
 @api.post("/chat")
 def chat(req: ChatRequest):
