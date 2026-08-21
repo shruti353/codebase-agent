@@ -104,10 +104,18 @@ if it returns no callers, state clearly that nothing is affected — do not add
 speculative maybes from search results."""
 
 def ask(question: str):
-    result = app.invoke({"messages": [
-        SystemMessage(content=SYSTEM_PROMPT),
-        HumanMessage(content=question),
-    ]})
+    try:
+    result = app.invoke(
+        {"messages": [
+            SystemMessage(content=SYSTEM_PROMPT),
+            HumanMessage(content=question),
+        ]},
+        config={"recursion_limit": 15}
+    )
+    except Exception as e:
+        print(f"Graph error: {e}")
+        return "I wasn't able to find a confident answer. Please try a more specific question."
+    
 
     for msg in result["messages"]:
         if getattr(msg, "tool_calls", None):
