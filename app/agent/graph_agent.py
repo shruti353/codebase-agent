@@ -59,7 +59,7 @@ def get_callees_of(function_name: str) -> str:
 
 tools= [search_code, get_source, get_callers_of, get_callees_of]
 llm = ChatGroq(
-    model="llama-3.3-70b-versatile",
+    model=os.getenv("GROQ_MODEL", "openai/gpt-oss-20b"),
     temperature=0,
 )
 
