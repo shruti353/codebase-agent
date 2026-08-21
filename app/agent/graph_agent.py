@@ -105,27 +105,29 @@ speculative maybes from search results."""
 
 def ask(question: str):
     try:
-    result = app.invoke(
-        {"messages": [
-            SystemMessage(content=SYSTEM_PROMPT),
-            HumanMessage(content=question),
-        ]},
-        config={"recursion_limit": 15}
-    )
+        result = app.invoke(
+            {
+                "messages": [
+                    SystemMessage(content=SYSTEM_PROMPT),
+                    HumanMessage(content=question),
+                ]
+            },
+            config={"recursion_limit": 15}
+        )
+
+        for msg in result["messages"]:
+            if getattr(msg, "tool_calls", None):
+                for tc in msg.tool_calls:
+                    print(f"  tool call: {tc['name']}({tc['args']})")
+            elif getattr(msg, "type", None) == "tool":
+                print(f"  [tool result] {msg.content[:200]}")
+
+        return result["messages"][-1].content
+
     except Exception as e:
         print(f"Graph error: {e}")
         return "I wasn't able to find a confident answer. Please try a more specific question."
     
-
-    for msg in result["messages"]:
-        if getattr(msg, "tool_calls", None):
-            for tc in msg.tool_calls:
-                print(f"  [tool call] {tc['name']}({tc['args']})")
-        elif getattr(msg, "type", None) == "tool":
-            print(f"  [tool result] {msg.content[:200]}")
-
-    return result["messages"][-1].content
-
 
 if __name__ == "__main__":
     question = "If I changed what the 'add' function returns, what other functions might break?"
