@@ -11,6 +11,8 @@ api= FastAPI(title="Codebase Agent API", description="API for the Codebase Agent
 class ChatRequest(BaseModel):
     question:str
 
+import traceback
+
 def event_stream(question: str):
     messages = [SystemMessage(content=SYSTEM_PROMPT), HumanMessage(content=question)]
 
@@ -36,9 +38,9 @@ def event_stream(question: str):
                 payload = {"type": "final", "content": last_msg.content}
                 yield f"data: {json.dumps(payload)}\n\n"
     except Exception as e:
-        payload = {"type": "final", "content": f"I wasn't able to find a confident answer for that question. ({type(e).__name__})"}
+        print("AGENT ERROR:", traceback.format_exc())  # <- this is what will show in Render logs
+        payload = {"type": "final", "content": f"Error: {type(e).__name__}: {str(e)}"}
         yield f"data: {json.dumps(payload)}\n\n"
-        
         
             
 @api.post("/chat")
